@@ -27,6 +27,17 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Gerencia session_id - sempre gera novo a cada carregamento da página
+  // Isso garante que o estado seja limpo quando o usuário recarrega
+  const [sessionId, setSessionId] = useState<string>(() => {
+    // Sempre gera um novo session_id a cada carregamento
+    // Não reutiliza do sessionStorage para evitar estado residual do backend
+    if (typeof window !== 'undefined') {
+      const newId = crypto.randomUUID?.() || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      return newId;
+    }
+    return `session-${Date.now()}`;
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -72,8 +83,8 @@ export default function Home() {
         },
         body: JSON.stringify({
           userMessage: userText,
-          currentState: transferState,
           messageHistory: newHistory,
+          sessionId: sessionId, // Envia session_id para reutilizar sessão
         }),
       });
 
@@ -82,6 +93,14 @@ export default function Home() {
       }
 
       const data = await response.json();
+      
+      // Debug: verificar estrutura da resposta
+      console.log('Response data:', data);
+      
+      if (!data.agentResponse) {
+        console.error('Missing agentResponse in data:', data);
+        throw new Error('Invalid response format: missing agentResponse');
+      }
       
       const agentMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -92,7 +111,7 @@ export default function Home() {
       };
 
       setMessages(prev => [...prev, agentMsg]);
-      setTransferState(data.updatedState);
+      setTransferState(data.updatedState || transferState);
     } catch (error) {
       console.error("Error processing message:", error);
       const errorMsg: Message = {
@@ -111,6 +130,9 @@ export default function Home() {
     setMessages([INITIAL_MESSAGE]);
     setTransferState(INITIAL_STATE);
     setInputValue('');
+    // Gera novo session_id ao resetar
+    const newSessionId = crypto.randomUUID?.() || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    setSessionId(newSessionId);
   };
 
   return (

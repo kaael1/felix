@@ -1,6 +1,39 @@
 import React from 'react';
+import Image from 'next/image';
 import { Message } from '../types';
 import { Bot, User, ExternalLink } from 'lucide-react';
+
+interface Snowflake {
+  id: number;
+  left: string;
+  animationDuration: string;
+  animationDelay: string;
+  opacity: number;
+  size: string;
+}
+
+const pseudoRandom = (seed: number) => {
+  const value = Math.sin(seed * 9999) * 10000;
+  return value - Math.floor(value);
+};
+
+const SNOWFLAKES: Snowflake[] = Array.from({ length: 16 }).map((_, index) => {
+  const base = pseudoRandom(index + 1);
+  const left = `${Math.floor(base * 100)}%`;
+  const animationDuration = `${Math.floor((base * 5) + 3)}s`;
+  const animationDelay = `${(base * 5).toFixed(2)}s`;
+  const opacity = Number((0.3 + base * 0.5).toFixed(2));
+  const size = `${(base * 4 + 3).toFixed(2)}px`;
+
+  return {
+    id: index,
+    left,
+    animationDuration,
+    animationDelay,
+    opacity,
+    size,
+  };
+});
 
 interface ChatBubbleProps {
   message: Message;
@@ -8,17 +41,7 @@ interface ChatBubbleProps {
 
 // Internal component for the subtle snow effect
 const SnowOverlay = () => {
-  // Generate static random values for snowflakes to avoid re-renders causing jumps
-  const snowflakes = React.useMemo(() => {
-    return Array.from({ length: 16 }).map((_, i) => ({
-      id: i,
-      left: `${Math.floor(Math.random() * 100)}%`,
-      animationDuration: `${Math.floor(Math.random() * 5 + 3)}s`, // 3-8s
-      animationDelay: `${Math.random() * 5}s`,
-      opacity: Math.random() * 0.5 + 0.3, // 0.3 - 0.8
-      size: `${Math.random() * 4 + 3}px` // 3px - 7px
-    }));
-  }, []);
+  const snowflakes = React.useMemo(() => SNOWFLAKES, []);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
@@ -68,6 +91,15 @@ const SnowOverlay = () => {
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
   const isAgent = message.role === 'agent';
+  const [useFallbackImage, setUseFallbackImage] = React.useState(false);
+
+  React.useEffect(() => {
+    setUseFallbackImage(false);
+  }, [message.id, message.promo?.imageUrl]);
+
+  const promoImageSrc = useFallbackImage
+    ? 'https://placehold.co/600x400/e2e8f0/64748b?text=Promo+Image'
+    : message.promo?.imageUrl ?? '';
 
   return (
     <div className={`flex w-full mb-6 ${isAgent ? 'justify-start' : 'justify-end'}`}>
@@ -99,13 +131,14 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
                {/* Snow Overlay */}
                <SnowOverlay />
                
-               <img 
-                 src={message.promo.imageUrl} 
-                 alt="Promo" 
-                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                 onError={(e) => {
-                   (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/e2e8f0/64748b?text=Promo+Image';
-                 }}
+               <Image
+                 src={promoImageSrc}
+                 alt="Promo"
+                 fill
+                 sizes="(min-width: 768px) 384px, 100vw"
+                 className="object-cover transition-transform duration-700 group-hover:scale-105"
+                 onError={() => setUseFallbackImage(true)}
+                 priority={false}
                />
                {/* Subtle gradient overlay to make white text pop if needed, though card has text below */}
                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />

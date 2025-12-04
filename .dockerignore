@@ -1,0 +1,16 @@
+.git
+node_modules
+.next
+.turbo
+.vercel
+.vscode
+.idea
+.DS_Store
+*.log
+coverage
+dist
+build
+.venv
+__pycache__
+*.pyc
+

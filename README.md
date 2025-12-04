@@ -15,62 +15,112 @@ A conversational AI agent built with Next.js that guides users through a money t
 ### Prerequisites
 
 - Node.js 18+ or Bun
+- Python 3.11+
 - A Google Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
 
 ### Installation
 
-1. Install dependencies:
+1. Install frontend dependencies:
 ```bash
 npm install
 # or
 bun install
 ```
 
-2. Create a `.env.local` file in the root directory:
+2. Create a `.env` file in the root directory:
 ```env
 GEMINI_API_KEY=your_api_key_here
+PYTHON_SERVICE_URL=http://localhost:8000
 ```
 
-Alternatively, you can use:
-```env
-API_KEY=your_api_key_here
-```
-
-3. Run the development server:
+3. Set up the Python backend:
 ```bash
-npm run dev
+python -m venv .venv
+source .venv/bin/activate      # Linux/Mac
 # or
-bun dev
+.venv\Scripts\activate         # Windows PowerShell
+pip install -r requirements.txt
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Run the development servers:
+```bash
+npm run dev:python   # start FastAPI + ADK agent
+npm run dev          # start Next.js
+# or run both
+npm run dev:all
+# or use the Makefile
+make dev-backend     # (same as npm run dev:python)
+make dev-frontend    # (same as npm run dev)
+make dev             # (same as npm run dev:all)
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Starting services independently
+
+- **Backend only**
+  ```bash
+  # manual
+  source .venv/bin/activate      # or .\.venv\Scripts\Activate.ps1
+  uvicorn backend.main:app --reload --port 8000
+
+  # or via npm / make
+  npm run dev:python
+  make dev-backend
+  ```
+- **Frontend only**
+  ```bash
+  npm run dev
+  make dev-frontend
+  ```
+
+Ensure the backend is already running (port `8000`) before starting the frontend, otherwise the Next.js proxy will return errors.
+
+### Docker workflow
+
+You can run everything inside a single Docker container:
+
+```bash
+make docker-build           # docker build -t felix-app:latest .
+make docker-run             # exposes 3000 (Next.js) and 8000 (FastAPI)
+make docker-logs            # tail container logs
+make docker-shell           # enter the container
+make docker-stop            # stop the running container
+```
+
+All Docker commands load environment variables from `.env` automatically if the file exists.
 
 ## Project Structure
 
 ```
+backend/
+├── agent.py            # Google ADK LlmAgent wrapper
+├── main.py             # FastAPI service
+└── types.py            # Shared Pydantic models
+
 src/
 ├── app/
-│   ├── api/
-│   │   └── chat/
-│   │       └── route.ts          # API endpoint for Gemini chat
-│   ├── layout.tsx                # Root layout
-│   ├── page.tsx                  # Main chat interface
-│   └── globals.css               # Global styles
+│   ├── api/chat/route.ts  # Next.js API proxy → FastAPI
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── globals.css
 ├── components/
-│   ├── ChatBubble.tsx            # Chat message component
-│   └── StatePanel.tsx            # Transfer state visualization
-├── services/
-│   └── geminiService.ts          # Gemini AI service
-└── types.ts                      # TypeScript type definitions
+│   ├── ChatBubble.tsx
+│   └── StatePanel.tsx
+└── types.ts
 ```
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
+- `npm run dev` / `make dev-frontend` - Start the Next.js dev server
+- `npm run dev:python` / `make dev-backend` - Start the FastAPI + ADK backend
+- `npm run dev:all` / `make dev` - Run both frontend and backend in parallel
 - `npm run build` - Build for production
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Check TypeScript types
+- `make install` - Install both frontend and backend dependencies
+- `make docker-*` - Build, run, debug or stop the Docker container
 
 ## How It Works
 
@@ -94,10 +144,9 @@ USA, Mexico, India, Philippines, Canada, UK, Brazil, France, Germany, Japan
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **AI**: Google Gemini 2.5 Flash
+- **Frontend**: Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- **Backend**: FastAPI + Google Agent Development Kit (ADK)
+- **AI Model**: Google Gemini 2.5 Flash
 - **Icons**: Lucide React
 
 ## License
