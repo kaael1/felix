@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SendMoney AI Agent
+
+A conversational AI agent built with Next.js that guides users through a money transfer process, intelligently collecting and validating transaction details using Google's Gemini AI.
+
+## Features
+
+- 🤖 **AI-Powered Chat**: Uses Google Gemini 2.5 Flash for natural language processing
+- 💬 **Conversational Interface**: Friendly chat-based UI for collecting transfer information
+- 📊 **Live State Tracking**: Real-time visualization of collected transfer details
+- ✅ **Smart Validation**: Validates countries and delivery methods automatically
+- 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ or Bun
+- A Google Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
+
+### Installation
+
+1. Install dependencies:
+```bash
+npm install
+# or
+bun install
+```
+
+2. Create a `.env.local` file in the root directory:
+```env
+GEMINI_API_KEY=your_api_key_here
+```
+
+Alternatively, you can use:
+```env
+API_KEY=your_api_key_here
+```
+
+3. Run the development server:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 # or
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── api/
+│   │   └── chat/
+│   │       └── route.ts          # API endpoint for Gemini chat
+│   ├── layout.tsx                # Root layout
+│   ├── page.tsx                  # Main chat interface
+│   └── globals.css               # Global styles
+├── components/
+│   ├── ChatBubble.tsx            # Chat message component
+│   └── StatePanel.tsx            # Transfer state visualization
+├── services/
+│   └── geminiService.ts          # Gemini AI service
+└── types.ts                      # TypeScript type definitions
+```
 
-## Learn More
+## Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Check TypeScript types
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How It Works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The agent collects four key pieces of information:
+1. **Destination Country** - Where the money is being sent
+2. **Amount** - Transfer amount (defaults to USD if currency not specified)
+3. **Beneficiary Name** - Who is receiving the money
+4. **Delivery Method** - Bank Deposit, Cash Pickup, or Mobile Wallet
 
-## Deploy on Vercel
+The AI validates inputs against supported countries and methods, asks clarifying questions when needed, and confirms completion when all information is collected.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Supported Countries
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+USA, Mexico, India, Philippines, Canada, UK, Brazil, France, Germany, Japan
+
+## Supported Delivery Methods
+
+- Bank Deposit
+- Cash Pickup
+- Mobile Wallet
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **AI**: Google Gemini 2.5 Flash
+- **Icons**: Lucide React
+
+## License
+
+Private project
