@@ -115,35 +115,35 @@ class PromptContext(BaseModel):
 
 
 def create_state_update_callback():
-    """Callback que atualiza session.state após o modelo LLM responder"""
+    """Callback that updates session.state after the LLM model responds"""
     async def on_after_model_call(
         callback_context: CallbackContext,
         llm_response: LlmResponse,
     ) -> Optional[LlmResponse]:
         """
-        Extrai o estado do JSON retornado pelo LLM e atualiza session.state.
-        Isso permite que o ADK gerencie o estado automaticamente.
+        Extracts the state from the JSON returned by the LLM and updates session.state.
+        This allows the ADK to manage the state automatically.
         """
         if not llm_response or not llm_response.content or not llm_response.content.parts:
             return None
         
-        # Extrai o texto da resposta
+        # Extract text from the response
         response_text = "".join(
             part.text or "" for part in llm_response.content.parts if part.text
         )
         
         try:
-            # Parse do JSON retornado pelo LLM
+            # Parse JSON returned by the LLM
             data = json.loads(response_text)
             agent_response_obj = AgentResponse(**data)
             
-            # Atualiza session.state com o novo estado
-            # Usa prefixo 'transfer:' para organizar o estado
+            # Update session.state with the new state
+            # Uses 'transfer:' prefix to organize the state
             state_dict = agent_response_obj.updatedState.model_dump()
             for key, value in state_dict.items():
                 callback_context.state[f"transfer:{key}"] = value
             
-            # Salva a resposta do agente e promo (se houver)
+            # Save agent response and promo (if present)
             callback_context.state["transfer:last_response"] = agent_response_obj.agentResponse
             if agent_response_obj.promo:
                 callback_context.state["transfer:promo"] = json.dumps(agent_response_obj.promo.model_dump())
@@ -154,10 +154,10 @@ def create_state_update_callback():
                     except KeyError:
                         pass
             
-            # Retorna None para manter a resposta original do LLM
+            # Return None to keep the original LLM response
             return None
         except (json.JSONDecodeError, Exception) as e:
-            # Se não conseguir parsear, mantém a resposta original
+            # If parsing fails, keep the original response
             logger.warning("Could not parse LLM response as JSON: %s", e, exc_info=True)
             logger.warning("Response text (first 500 chars): %s", response_text[:500])
             return None
@@ -177,12 +177,12 @@ class SendMoneyAgentService:
                 temperature=0.1,
                 response_mime_type="application/json",
             ),
-            # Callback para atualizar estado automaticamente
+            # Callback to update state automatically
             after_model_callback=create_state_update_callback(),
         )
         self._app_name = "send-money-service"
         self._user_id = "web-client"
-        # Cria session_service como atributo da classe para reutilização
+        # Create session_service as class attribute for reuse
         self._session_service = InMemorySessionService()
 
     async def process_message(
@@ -191,23 +191,23 @@ class SendMoneyAgentService:
         session_id: Optional[str] = None
     ) -> AgentResponse:
         """
-        Processa uma mensagem do usuário.
+        Process a user message.
         
         Args:
-            payload: Dados da requisição
-            session_id: ID da sessão (se None, cria nova sessão)
+            payload: Request data
+            session_id: Session ID (if None, creates new session)
         """
-        # Usa session_id fornecido ou cria novo
+        # Use provided session_id or create new one
         if session_id is None:
             session_id = str(uuid4())
         
-        # Obtém ou cria a sessão
+        # Get or create session
         session = await self._session_service.get_session(
             app_name=self._app_name,
             user_id=self._user_id,
             session_id=session_id,
         )
-        # Se não encontrou, cria e busca novamente
+        # If not found, create and fetch again
         if session is None:
             await self._session_service.create_session(
                 app_name=self._app_name,
@@ -222,8 +222,8 @@ class SendMoneyAgentService:
         if session is None:
             raise RuntimeError("Could not create or retrieve session.")
         
-        # Recupera estado atual de session.state (se existir)
-        # O ADK é a única fonte de verdade para o estado
+        # Retrieve current state from session.state (if exists)
+        # ADK is the single source of truth for the state
         current_state = TransferState(
             destinationCountry=session.state.get("transfer:destinationCountry"),
             amount=session.state.get("transfer:amount"),
@@ -232,7 +232,7 @@ class SendMoneyAgentService:
             isComplete=session.state.get("transfer:isComplete", False),
         )
         
-        # Prepara o contexto do prompt
+        # Prepare prompt context
         prompt = PromptContext(
             user_message=payload.userMessage,
             state=current_state,
@@ -261,7 +261,7 @@ class SendMoneyAgentService:
         if not final_text:
             raise RuntimeError("Agent did not return a final response.")
 
-        # Parse da resposta
+        # Parse response
         try:
             data = json.loads(final_text)
             response = AgentResponse(**data)
@@ -270,14 +270,14 @@ class SendMoneyAgentService:
             print(f"Response text: {final_text[:500]}")
             raise
         
-        # Recupera estado atualizado de session.state (após callback)
+        # Retrieve updated state from session.state (after callback)
         updated_session = await self._session_service.get_session(
             app_name=self._app_name,
             user_id=self._user_id,
             session_id=session_id,
         )
         
-        # Atualiza response.updatedState com o estado do ADK
+        # Update response.updatedState with ADK state
         response.updatedState = TransferState(
             destinationCountry=updated_session.state.get("transfer:destinationCountry"),
             amount=updated_session.state.get("transfer:amount"),
@@ -286,7 +286,7 @@ class SendMoneyAgentService:
             isComplete=updated_session.state.get("transfer:isComplete", False),
         )
         
-        # Recupera promo do estado se existir
+        # Retrieve promo from state if exists
         promo_json = updated_session.state.get("transfer:promo")
         if promo_json:
             try:

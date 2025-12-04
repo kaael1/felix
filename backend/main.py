@@ -30,7 +30,7 @@ app.add_middleware(
 @app.post("/api/chat")
 async def chat_endpoint(
     request: ChatRequest,
-    session_id: Optional[str] = Query(None, description="Session ID para manter contexto")
+    session_id: Optional[str] = Query(None, description="Session ID to maintain context")
 ) -> Any:
     try:
         response: AgentResponse = await agent_service.process_message(

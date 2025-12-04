@@ -27,11 +27,11 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // Gerencia session_id - sempre gera novo a cada carregamento da página
-  // Isso garante que o estado seja limpo quando o usuário recarrega
+  // Manages session_id - always generates new one on each page load
+  // This ensures state is cleared when user reloads
   const [sessionId, setSessionId] = useState<string>(() => {
-    // Sempre gera um novo session_id a cada carregamento
-    // Não reutiliza do sessionStorage para evitar estado residual do backend
+    // Always generate a new session_id on each load
+    // Does not reuse from sessionStorage to avoid residual state from backend
     if (typeof window !== 'undefined') {
       const newId = crypto.randomUUID?.() || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       return newId;
@@ -84,7 +84,7 @@ export default function Home() {
         body: JSON.stringify({
           userMessage: userText,
           messageHistory: newHistory,
-          sessionId: sessionId, // Envia session_id para reutilizar sessão
+          sessionId: sessionId, // Send session_id to reuse session
         }),
       });
 
@@ -94,7 +94,7 @@ export default function Home() {
 
       const data = await response.json();
       
-      // Debug: verificar estrutura da resposta
+      // Debug: verify response structure
       console.log('Response data:', data);
       
       if (!data.agentResponse) {
@@ -130,7 +130,7 @@ export default function Home() {
     setMessages([INITIAL_MESSAGE]);
     setTransferState(INITIAL_STATE);
     setInputValue('');
-    // Gera novo session_id ao resetar
+    // Generate new session_id on reset
     const newSessionId = crypto.randomUUID?.() || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
   };
